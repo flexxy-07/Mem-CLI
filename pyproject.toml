@@ -20,6 +20,9 @@ dependencies = [
     "langchain-google-genai>=4.0.0",
 ]
 
+[project.scripts]
+memcli = "memcli.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",

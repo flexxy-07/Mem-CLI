@@ -26,7 +26,10 @@ memCLI/
 └── src/
     └── memcli/              # Main application package
         ├── __init__.py      # Package metadata
-        └── database.py      # Database engine & connection testing
+        ├── agent.py         # LangGraph memory & response agent
+        ├── cli.py           # Interactive & command-line interface
+        ├── database.py      # Database engine & connection testing
+        └── memory.py        # Core memory storage & retrieval operations
 ```
 
 ---
@@ -109,6 +112,36 @@ Expected output:
 ```text
 Connected to database: memcli
 PostgreSQL version: PostgreSQL 17.x ...
+```
+
+### 7. Run MemCLI
+
+Launch the interactive chat session:
+```bash
+memcli
+# OR
+python -m memcli.cli
+```
+
+Available subcommands:
+```bash
+# Start interactive chat (default)
+memcli chat
+
+# One-shot question
+memcli chat "What programming language do I prefer for interviews?"
+
+# List stored memories
+memcli list
+
+# Search memories by keyword
+memcli search java
+
+# Manually save a memory
+memcli remember "I love building agentic AI applications" --category preference
+
+# Switch user namespace
+memcli -u alice chat
 ```
 
 ---

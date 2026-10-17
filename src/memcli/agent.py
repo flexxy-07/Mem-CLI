@@ -1,5 +1,6 @@
 
 import os
+import warnings
 from typing import TypedDict
 
 from dotenv import load_dotenv
@@ -7,7 +8,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
 
 from .memory import search_memories, save_memory
-
+1
+warnings.filterwarnings("ignore", category=UserWarning, module="langchain_google_genai")
 load_dotenv()
 
 api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("LLM_API_KEY")
