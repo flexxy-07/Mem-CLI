@@ -3,7 +3,12 @@ import os
 import sys
 
 from .agent import chat
-from .memory import list_memories, save_memory, search_memories
+from .memory import (
+    list_memories,
+    save_memory,
+    search_memories,
+    search_memories_semantic,
+)
 
 
 def run_interactive(user_id: str):
@@ -66,14 +71,19 @@ def main():
     )
 
     # search subcommand
-    search_parser = subparsers.add_parser("search", help="Search memories by keyword")
-    search_parser.add_argument("keyword", help="Keyword to search for")
+    search_parser = subparsers.add_parser("search", help="Search memories semantically or by keyword")
+    search_parser.add_argument("query", help="Query or keyword to search for")
     search_parser.add_argument(
         "-n",
         "--limit",
         type=int,
-        default=10,
-        help="Maximum search results (default: 10)",
+        default=5,
+        help="Maximum search results (default: 5)",
+    )
+    search_parser.add_argument(
+        "--keyword",
+        action="store_true",
+        help="Use literal keyword search (ILIKE) instead of semantic vector search",
     )
 
     # remember subcommand
@@ -102,15 +112,27 @@ def main():
         print()
 
     elif args.command == "search":
-        results = search_memories(user_id=user_id, keyword=args.keyword, limit=args.limit)
-        if not results:
-            print(f"\nNo memories found matching '{args.keyword}'.\n")
-            return
-        print(f"\nSearch results for '{args.keyword}':")
-        print("-" * 55)
-        for m in results:
-            print(f"  - [{m.get('category', 'fact')}] {m['content']}")
-        print()
+        if args.keyword:
+            results = search_memories(user_id=user_id, keyword=args.query, limit=args.limit)
+            if not results:
+                print(f"\nNo memories found matching keyword '{args.query}'.\n")
+                return
+            print(f"\nKeyword search results for '{args.query}':")
+            print("-" * 55)
+            for m in results:
+                print(f"  - [{m.get('category', 'fact')}] {m['content']}")
+            print()
+        else:
+            results = search_memories_semantic(user_id=user_id, query=args.query, limit=args.limit)
+            if not results:
+                print(f"\nNo semantic matches found for '{args.query}'.\n")
+                return
+            print(f"\nSemantic search results for '{args.query}':")
+            print("-" * 55)
+            for m in results:
+                sim = m.get("similarity", 0.0)
+                print(f"  - (similarity: {sim:.2f}) [{m.get('category', 'fact')}] {m['content']}")
+            print()
 
     elif args.command == "remember":
         memory_id = save_memory(user_id=user_id, content=args.content, category=args.category)

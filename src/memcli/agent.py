@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, START, END
 
-from .memory import search_memories, save_memory
-1
+from .memory import search_memories, search_memories_semantic, save_memory
+
 warnings.filterwarnings("ignore", category=UserWarning, module="langchain_google_genai")
 load_dotenv()
 
@@ -32,25 +32,14 @@ class AgentState(TypedDict):
 
 
 def retrieve_memories(state: AgentState):
-    """Retrieve potentially relevant memories for this user."""
-    words = state["message"].split()
-    found = {}
-
-    for word in words:
-        keyword = word.strip(".,!?;:\"'()")
-        if len(keyword) < 3:
-            continue
-
-        results = search_memories(
-            user_id=state["user_id"],
-            keyword=keyword,
-            limit=5,
-        )
-
-        for memory in results:
-            found[str(memory["id"])] = memory
-
-    return {"memories": list(found.values())}
+    """Retrieve relevant memories for this user using semantic vector search."""
+    results = search_memories_semantic(
+        user_id=state["user_id"],
+        query=state["message"],
+        limit=5,
+        similarity_threshold=0.55,
+    )
+    return {"memories": results}
 
 
 def _extract_text(content) -> str:
