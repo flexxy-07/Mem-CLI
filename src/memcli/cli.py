@@ -69,6 +69,11 @@ def main():
         default=10,
         help="Maximum number of memories to display (default: 10)",
     )
+    list_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Include inactive and superseded memories for audit/history",
+    )
 
     # search subcommand
     search_parser = subparsers.add_parser("search", help="Search memories semantically or by keyword")
@@ -100,15 +105,20 @@ def main():
     user_id = args.user
 
     if args.command == "list":
-        memories = list_memories(user_id=user_id, limit=args.limit)
+        memories = list_memories(user_id=user_id, limit=args.limit, include_superseded=args.all)
         if not memories:
             print(f"\nNo memories found for user '{user_id}'.\n")
             return
-        print(f"\nStored memories for user '{user_id}' ({len(memories)} total):")
-        print("-" * 55)
+        header = f"Stored memories for user '{user_id}' ({len(memories)} total"
+        header += ", including superseded):" if args.all else "):"
+        print(f"\n{header}")
+        print("-" * 65)
         for m in memories:
             created = str(m.get("created_at", ""))[:19]
-            print(f"  - [{m.get('category', 'fact')}] {m['content']} ({created})")
+            status_tag = ""
+            if not m.get("is_active", True):
+                status_tag = " [SUPERSEDED]"
+            print(f"  - [{m.get('category', 'fact')}]{status_tag} {m['content']} ({created})")
         print()
 
     elif args.command == "search":
