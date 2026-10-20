@@ -2,7 +2,7 @@ from uuid import uuid4, UUID
 from sqlalchemy import text
 from .database import engine
 from .embeddings import get_embedding
-from .arbiter import detect_conflict
+from .arbiter import detect_conflict, detect_conflicts_batch
 
 
 def save_memory(
@@ -125,13 +125,16 @@ def save_memory(
         }
       ).fetchall()
 
-      for cand_id, cand_content, _ in candidates:
-        decision = detect_conflict(existing_memory=cand_content, new_memory=clean_content)
+      # Batch all candidates into ONE arbiter LLM call instead of N calls
+      batch_input = [(cand_id, cand_content) for cand_id, cand_content, _ in candidates]
+      decisions = detect_conflicts_batch(candidates=batch_input, new_memory=clean_content)
+
+      for decision in decisions:
         if decision.get("conflict"):
           connection.execute(
             supersede_query,
             {
-              "old_id": cand_id,
+              "old_id": decision["id"],
               "new_id": new_memory_id,
             }
           )
