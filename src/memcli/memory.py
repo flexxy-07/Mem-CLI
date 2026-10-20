@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 from sqlalchemy import text
 from .database import engine
 from .embeddings import get_embedding
@@ -32,9 +32,9 @@ def save_memory(
       AND is_active = TRUE
       AND (
         LOWER(TRIM(content)) = LOWER(:content)
-        OR (embedding <=> :embedding) <= 0.05
+        OR ((embedding)::halfvec(3072) <=> (:embedding)::halfvec(3072)) <= 0.05
       )
-    ORDER BY (embedding <=> :embedding) ASC
+    ORDER BY ((embedding)::halfvec(3072) <=> (:embedding)::halfvec(3072)) ASC
     LIMIT 1
   """)
 
@@ -54,8 +54,8 @@ def save_memory(
     WHERE user_id = :user_id
       AND is_active = TRUE
       AND id != :new_id
-      AND (embedding <=> :embedding) BETWEEN 0.05 AND 0.38
-    ORDER BY (embedding <=> :embedding) ASC
+      AND ((embedding)::halfvec(3072) <=> (:embedding)::halfvec(3072)) BETWEEN 0.05 AND 0.38
+    ORDER BY ((embedding)::halfvec(3072) <=> (:embedding)::halfvec(3072)) ASC
     LIMIT 3
   """)
 
@@ -209,12 +209,12 @@ def search_memories_semantic(
 
   sql = text("""
     SELECT id, content, category, created_at, updated_at,
-           (embedding <=> :query_vector) AS distance
+           ((embedding)::halfvec(3072) <=> (:query_vector)::halfvec(3072)) AS distance
     FROM memories
     WHERE user_id = :user_id
       AND is_active = TRUE
       AND embedding IS NOT NULL
-    ORDER BY distance ASC
+    ORDER BY (embedding::halfvec(3072) <=> (:query_vector)::halfvec(3072)) ASC
     LIMIT :limit
   """)
 
@@ -241,3 +241,141 @@ def search_memories_semantic(
       memories.append(row_dict)
 
     return memories
+
+
+def is_valid_uuid(val: str) -> bool:
+  """Check if a string represents a valid UUID."""
+  try:
+    UUID(str(val).strip())
+    return True
+  except (ValueError, AttributeError):
+    return False
+
+
+def delete_memory_by_id(user_id: str, memory_id: str) -> bool:
+  """Permanently delete a specific memory by ID for a user.
+
+  Safely unlinks any superseded_by foreign references pointing to this memory first.
+  Returns True if deleted, False if not found.
+  """
+  clean_id = str(memory_id).strip()
+  with engine.begin() as connection:
+    # Clear foreign key references to this memory to prevent constraint violations
+    connection.execute(
+      text("""
+        UPDATE memories
+        SET superseded_by = NULL
+        WHERE superseded_by = :mem_id
+      """),
+      {"mem_id": clean_id}
+    )
+    result = connection.execute(
+      text("""
+        DELETE FROM memories
+        WHERE id = :mem_id AND user_id = :user_id
+      """),
+      {"mem_id": clean_id, "user_id": user_id}
+    )
+    return result.rowcount > 0
+
+
+def delete_memories_semantic(
+  user_id: str,
+  query: str,
+  similarity_threshold: float = 0.65,
+  limit: int = 5,
+) -> list[dict]:
+  """Find and permanently delete memories that semantically match a query.
+
+  Returns the list of memories that were deleted (including similarity scores).
+  """
+  matches = search_memories_semantic(
+    user_id=user_id,
+    query=query,
+    limit=limit,
+    similarity_threshold=similarity_threshold,
+  )
+  if not matches:
+    return []
+
+  deleted = []
+  with engine.begin() as connection:
+    for m in matches:
+      mem_id = str(m["id"])
+      connection.execute(
+        text("""
+          UPDATE memories
+          SET superseded_by = NULL
+          WHERE superseded_by = :mem_id
+        """),
+        {"mem_id": mem_id}
+      )
+      res = connection.execute(
+        text("""
+          DELETE FROM memories
+          WHERE id = :mem_id AND user_id = :user_id
+        """),
+        {"mem_id": mem_id, "user_id": user_id}
+      )
+      if res.rowcount > 0:
+        deleted.append(m)
+
+  return deleted
+
+
+def clear_memories(user_id: str) -> int:
+  """Permanently delete all memories for a user (GDPR Right to be Forgotten).
+
+  Returns the count of deleted records.
+  """
+  with engine.begin() as connection:
+    connection.execute(
+      text("""
+        UPDATE memories
+        SET superseded_by = NULL
+        WHERE user_id = :user_id
+      """),
+      {"user_id": user_id}
+    )
+    result = connection.execute(
+      text("""
+        DELETE FROM memories
+        WHERE user_id = :user_id
+      """),
+      {"user_id": user_id}
+    )
+    return result.rowcount
+
+
+def export_memories(
+  user_id: str,
+  include_superseded: bool = True,
+) -> list[dict]:
+  """Export all stored memories for a user (GDPR data portability).
+
+  Returns a list of serializable dictionaries.
+  """
+  active_clause = "" if include_superseded else "AND is_active = TRUE"
+  query = text(f"""
+    SELECT id, user_id, content, category, is_active, superseded_by,
+           source_thread_id, created_at, updated_at
+    FROM memories
+    WHERE user_id = :user_id
+      {active_clause}
+    ORDER BY created_at ASC
+  """)
+
+  with engine.connect() as connection:
+    result = connection.execute(query, {"user_id": user_id})
+    records = []
+    for row in result.mappings().all():
+      item = dict(row)
+      item["id"] = str(item["id"])
+      if item.get("superseded_by"):
+        item["superseded_by"] = str(item["superseded_by"])
+      if item.get("created_at"):
+        item["created_at"] = item["created_at"].isoformat()
+      if item.get("updated_at"):
+        item["updated_at"] = item["updated_at"].isoformat()
+      records.append(item)
+    return records
