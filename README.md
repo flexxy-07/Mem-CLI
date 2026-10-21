@@ -319,13 +319,4 @@ WITH (m = 16, ef_construction = 64);
 
 ---
 
-## Security
 
-- Never commit `.env` to version control. `.gitignore` excludes all `.env` files automatically.
-- Only `.env.example` with placeholder values should be committed.
-
----
-
-## License
-
-MIT
