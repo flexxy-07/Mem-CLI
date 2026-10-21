@@ -6,8 +6,8 @@ memories results in only ONE database row — the existing row is refreshed,
 not duplicated.
 """
 import pytest
-from memcli.memory import save_memory, list_memories, clear_memories
 
+from memcli.memory import clear_memories, list_memories, save_memory
 
 TEST_USER = "test-deduplication"
 

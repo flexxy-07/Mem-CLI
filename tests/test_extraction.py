@@ -6,9 +6,9 @@ preferences from user messages, and does NOT extract ephemeral content
 like questions, chitchat, or one-off requests.
 """
 import pytest
-from memcli.agent import interact
-from memcli.memory import list_memories, clear_memories
 
+from memcli.agent import interact
+from memcli.memory import clear_memories, list_memories
 
 TEST_USER = "test-extraction"
 

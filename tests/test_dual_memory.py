@@ -8,10 +8,11 @@ Verifies that the LangGraph agent correctly maintains:
 This is the core architectural test for the dual-tier memory system.
 """
 import uuid
-import pytest
-from memcli.agent import chat, interact
-from memcli.memory import save_memory, list_memories, clear_memories
 
+import pytest
+
+from memcli.agent import chat, interact
+from memcli.memory import clear_memories, list_memories, save_memory
 
 TEST_USER = "test-dual-memory"
 

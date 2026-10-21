@@ -5,8 +5,8 @@ Verifies that search_memories_semantic() returns relevant results ordered
 by cosine similarity, and that results respect the similarity threshold.
 """
 import pytest
-from memcli.memory import save_memory, search_memories_semantic, clear_memories
 
+from memcli.memory import clear_memories, save_memory, search_memories_semantic
 
 TEST_USER = "test-semantic-search"
 

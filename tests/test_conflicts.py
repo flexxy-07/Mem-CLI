@@ -7,9 +7,14 @@ the superseded memory no longer appears in semantic search results.
 """
 import pytest
 from sqlalchemy import text
-from memcli.memory import save_memory, list_memories, search_memories_semantic, clear_memories
-from memcli.database import engine
 
+from memcli.database import engine
+from memcli.memory import (
+    clear_memories,
+    list_memories,
+    save_memory,
+    search_memories_semantic,
+)
 
 TEST_USER = "test-conflicts"
 

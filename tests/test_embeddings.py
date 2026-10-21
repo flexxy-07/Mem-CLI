@@ -6,7 +6,9 @@ vectors and that cosine similarity between semantically related texts
 is higher than between unrelated texts.
 """
 import math
+
 import pytest
+
 from memcli.embeddings import get_embedding, get_model_name
 
 

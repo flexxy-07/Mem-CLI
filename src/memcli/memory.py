@@ -1,8 +1,10 @@
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
+
 from sqlalchemy import text
+
+from .arbiter import detect_conflicts_batch
 from .database import engine
 from .embeddings import get_embedding
-from .arbiter import detect_conflict, detect_conflicts_batch
 
 
 def save_memory(

@@ -5,15 +5,15 @@ Verifies all data management primitives: forget by ID, semantic forget,
 export, and full clear (right to be forgotten).
 """
 import pytest
-from memcli.memory import (
-    save_memory,
-    list_memories,
-    delete_memory_by_id,
-    delete_memories_semantic,
-    clear_memories,
-    export_memories,
-)
 
+from memcli.memory import (
+    clear_memories,
+    delete_memories_semantic,
+    delete_memory_by_id,
+    export_memories,
+    list_memories,
+    save_memory,
+)
 
 TEST_USER = "test-privacy"
 
@@ -60,7 +60,7 @@ def test_export_returns_all_memories(three_memories):
 
 def test_forget_by_id(three_memories):
     """delete_memory_by_id() must remove exactly the targeted memory."""
-    id1, id2, id3 = three_memories
+    id1, _, _ = three_memories
     deleted = delete_memory_by_id(TEST_USER, id1)
     assert deleted is True, "Expected True for a successful deletion."
     remaining = list_memories(TEST_USER)

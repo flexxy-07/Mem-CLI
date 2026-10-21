@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import sys
 from uuid import uuid4
 
 from .agent import chat

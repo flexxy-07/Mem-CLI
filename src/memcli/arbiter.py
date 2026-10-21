@@ -96,7 +96,7 @@ Return ONLY a valid JSON array — one entry per existing memory, in the same or
     try:
         items = json.loads(content)
         if not isinstance(items, list):
-            raise ValueError("Expected a JSON array")
+            raise TypeError("Expected a JSON array")
         decisions = []
         for item in items:
             decisions.append({
@@ -105,7 +105,7 @@ Return ONLY a valid JSON array — one entry per existing memory, in the same or
                 "reason": str(item.get("reason", "")),
             })
         return decisions
-    except Exception:
+    except (json.JSONDecodeError, TypeError, ValueError, KeyError):
         # Safe fallback: treat all as non-conflicting to avoid accidental data loss
         return [
             {"id": str(cand_id), "conflict": False, "reason": "Batch parse failed — defaulting to no conflict"}
@@ -161,5 +161,5 @@ OR
             "conflict": bool(data.get("conflict", False)),
             "reason": str(data.get("reason", "")),
         }
-    except Exception:
+    except (json.JSONDecodeError, TypeError, ValueError, KeyError):
         return {"conflict": False, "reason": "Failed to parse arbiter response"}

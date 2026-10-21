@@ -50,10 +50,7 @@ def retrieve_memories(state: AgentState):
     """Retrieve relevant long-term memories for this user using semantic vector search."""
     latest_query = ""
     for msg in reversed(state.get("messages", [])):
-        if isinstance(msg, HumanMessage) or getattr(msg, "type", None) == "human":
-            latest_query = _extract_text(msg.content).strip()
-            break
-        elif isinstance(msg, BaseMessage) and not isinstance(msg, AIMessage):
+        if isinstance(msg, HumanMessage) or getattr(msg, "type", None) == "human" or isinstance(msg, BaseMessage) and not isinstance(msg, AIMessage):
             latest_query = _extract_text(msg.content).strip()
             break
 
