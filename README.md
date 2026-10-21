@@ -1,4 +1,5 @@
 # MemCLI — Memory Management in Agents
+[![CI](https://github.com/flexxy-07/Mem-CLI/actions/workflows/ci.yml/badge.svg)](https://github.com/flexxy-07/Mem-CLI/actions/workflows/ci.yml)
 
 > A hands-on, production-modelled study of how **persistent memory is built, managed, and governed** in real-world AI agents — using PostgreSQL, pgvector, LangGraph, and Google Gemini.
 
